@@ -1,3 +1,4 @@
+
 //
 //  RepoItem.swift
 //  GithubClient
@@ -8,40 +9,82 @@
 import SwiftUI
 
 struct RepoItem: View {
+    
     let repository: Repository
+    
     var body: some View {
-        HStack {
-            AsyncImage(url: URL(string: repository.owner.avatarUrl)) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Image(uiImage: .imageNotFound)
-                    .resizable()
-                    .scaledToFit()
+        HStack(alignment: .top, spacing: 10) {
+            
+            AsyncImage(
+                url: URL(string: repository.owner.avatarUrl)
+            ) { phase in
                 
+                switch phase {
+                    
+                case .empty:
+                    ZStack {
+                        Circle()
+                            .fill(Color.gray.opacity(0.2))
+                        
+                        ProgressView()
+                    }
+                    
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                    
+                case .failure:
+                    Image(uiImage: .imageNotFound)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(5)
+                    
+                @unknown default:
+                    Image(uiImage: .imageNotFound)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(5)
+                }
             }
             .frame(width: 80, height: 80)
+            .background(Color.gray.opacity(0.1))
+            .clipShape(Circle())
             .padding(.trailing, 10)
             
-            VStack (alignment: .leading) {
+            VStack(alignment: .leading, spacing: 6) {
+                
                 Text(repository.name)
                     .font(.title2)
-                if let description = repository.description {
+                    .fontWeight(.semibold)
+                
+                if let description = repository.description,
+                   !description.isEmpty {
+                    
                     Text(description)
                         .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
                 }
-                if let language = repository.language {
+                
+                if let language = repository.language,
+                   !language.isEmpty {
+                    
                     HStack {
-                        Text("Lenguaje")
+                        Text("Lenguaje:")
                             .font(.caption)
-                        Spacer()
+                            .fontWeight(.semibold)
+                        
                         Text(language)
                             .font(.caption)
+                            .foregroundStyle(.blue)
                     }
                 }
             }
+            
+            Spacer()
         }
+        .padding(.vertical, 8)
     }
 }
 
@@ -50,14 +93,15 @@ struct RepoItem: View {
         repository: Repository(
             id: 1,
             name: "GithubClient",
-            description: "Cliente GitHub en SwiftUI",
+            description: "Cliente GitHub desarrollado con SwiftUI",
             language: "Swift",
             owner: UserInfo(
                 login: "pabloperez",
                 name: "Pablo Pérez",
-                avatarUrl: "https://cdn-icons-png.flaticon.com/512/9187/9187604.png",
+                avatarUrl: "https://avatars.githubusercontent.com/u/9919?v=4",
                 bio: nil
             )
         )
     )
 }
+

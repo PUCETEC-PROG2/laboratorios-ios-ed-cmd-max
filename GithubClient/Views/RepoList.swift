@@ -8,16 +8,31 @@
 import SwiftUI
 
 struct RepoList: View {
-    private var repoList = Repository.sampleData
+    @StateObject private var viewController = RepoListViewController()
     
     var body: some View {
         NavigationStack {
             Group {
-                List(repoList) { repo in
-                    RepoItem(repository: repo)
+                if viewController.isLoading {
+                    ProgressView("Cargando Repositorios...")
+                    
+                } else if let errorMsg = viewController.errorMsg {
+                    Text(errorMsg)
+                        .foregroundStyle(.red)
+                        .padding()
+                    
+                } else {
+                    List(viewController.repos) { repo in
+                        RepoItem(repository: repo)
+                    }
                 }
             }
             .navigationTitle("Repositorios")
+        }
+        .onAppear {
+            Task {
+                await viewController.loadRepositories()
+            }
         }
     }
 }
