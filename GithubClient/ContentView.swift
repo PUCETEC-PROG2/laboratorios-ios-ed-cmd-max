@@ -8,20 +8,26 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selection: Int = 0
+    
     var body: some View {
-        TabView{
+        TabView (selection: $selection) {
             RepoList()
                 .tabItem{
                     Label("Repositorios", systemImage: "arrow.branch")
+                    
                 }
-            RepoForm()
+                .tag(0)
+            RepoForm(selectedTab: $selection)
                 .tabItem{
                     Label("Crear Repo", systemImage: "plus")
                 }
+                .tag(1)
             Profile()
                 .tabItem{
                     Label("Perfil", systemImage: "person")
                 }
+                .tag(2)
         }
  
     }
