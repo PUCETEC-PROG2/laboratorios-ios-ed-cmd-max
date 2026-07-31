@@ -5,35 +5,75 @@
 //  Created by Usuario invitado on 24/7/26.
 //
 
+//
+//  RepoFormViewController.swift
+//  GithubClient
+//
+
 import Foundation
 
 @MainActor
-public
 class RepoFormViewController: ObservableObject {
-    
+
     @Published var repoName: String = ""
     @Published var repoDescription: String = ""
-    @Published var repository: Repository? = nil
+    @Published var isPrivate: Bool = false
+
     @Published var isLoading: Bool = false
-    @Published var errorMsg: String?
-    
+    @Published var errorMsg: String = ""
+    @Published var showAlert: Bool = false
+
     private let githubService: GithubService
-    
+
     init(service: GithubService = .shared) {
         self.githubService = service
     }
-    
-    func createRepository() async {
-        isLoading = true
-        do {
-            self.repository = try await githubService.createRepository(name: repoName,
-                                                                        description: repoDescription)
-            self.repoName = ""
-            self.repoDescription = ""
-            errorMsg = nil
-        } catch {
-            errorMsg = error.localizedDescription
+
+    func createRepository(
+        onSuccess: @escaping () -> Void
+    ) {
+
+        let cleanName = repoName.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        
+        guard !cleanName.isEmpty else {
+            errorMsg = "El nombre del repositorio es obligatorio."
+            showAlert = true
+            return
         }
-        isLoading = false
+
+        isLoading = true
+
+        githubService.createRepo(
+            name: cleanName,
+            description: repoDescription,
+            private: isPrivate
+        ) { [weak self] result in
+
+            DispatchQueue.main.async {
+
+                guard let self = self else {
+                    return
+                }
+
+                self.isLoading = false
+
+                switch result {
+
+                case .success:
+                    self.repoName = ""
+                    self.repoDescription = ""
+                    self.isPrivate = false
+
+                    onSuccess()
+
+                case .failure(let error):
+                    self.errorMsg = error.localizedDescription
+                    self.showAlert = true
+                }
+            }
+        }
     }
 }

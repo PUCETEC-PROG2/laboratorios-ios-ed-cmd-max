@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>API_TOKEN</key>
-	<string>xxxxxxxxxx</string>
+	<string>xxxxxxx</string>
 	<key>API_BASE_URL</key>
 	<string>https://api.github.com</string>
 </dict>

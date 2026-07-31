@@ -98,7 +98,7 @@ struct RepoItem: View {
             owner: UserInfo(
                 login: "pabloperez",
                 name: "Pablo Pérez",
-                avatarUrl: "https://avatars.githubusercontent.com/u/9919?v=4",
+                avatarUrl: "Ihttps://avatars.githubusercontent.com/u/9919?v=4",
                 bio: nil
             )
         )

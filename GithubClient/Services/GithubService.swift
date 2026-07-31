@@ -2,11 +2,14 @@
 //  GithubService.swift
 //  GithubClient
 //
-//  Created by Usuario invitado on 21/7/26.
-//
 
 import Foundation
 import Alamofire
+import Foundation
+import Alamofire
+struct GitHubError: Decodable {
+    let message: String
+}
 
 class GithubService {
 
@@ -24,7 +27,7 @@ class GithubService {
     }
 
     func getRepositories() async throws -> [Repository] {
-
+        
         let response = await AF.request(
             "\(baseUrl)/user/repos",
             method: .get,
@@ -32,67 +35,107 @@ class GithubService {
                 "sort": "created",
                 "direction": "desc",
                 "per_page": 100,
-                "affiliation": "owner",
-                "t": Date().timeIntervalSince1970
+                "affiliation": "owner"
             ],
             encoding: URLEncoding.default,
             headers: headers
         )
-        .validate(statusCode: 200..<300)
-        .serializingDecodable([Repository].self)
-        .response
-
-        if let data = response.data,
-           let json = String(data: data, encoding: .utf8) {
-
-            print("***** Respuesta de GitHub *****")
-            print(json)
+            .validate(statusCode: 200..<300)
+            .serializingDecodable([Repository].self)
+            .response
+        
+        switch response.result {
+        case .success(let repositories):
+            return repositories
+            
+        case .failure(let error):
+            print(error)
+            
+            if let statusCode = response.response?.statusCode {
+                print("Status Code:", statusCode)
+            }
+            
+            if let data = response.data {
+                print(String(data: data, encoding: .utf8) ?? "")
+            }
+            
+            throw error
+            
         }
+    }
+    func getUserProfile() async throws -> UserInfo {
+
+        let response = await AF.request(
+            "\(baseUrl)/user",
+            method: .get,
+            headers: headers
+        )
+        .validate(statusCode: 200..<300)
+        .serializingDecodable(UserInfo.self)
+        .response
 
         switch response.result {
 
-        case .success(let repositories):
-            return repositories
+        case .success(let user):
+            return user
 
         case .failure(let error):
-            print("Error al obtener repositorios:")
-            print(error.localizedDescription)
             throw error
         }
     }
 
-    func createRepository(name: String, description: String) async throws -> Repository {
 
-        let response = await AF.request(
+    func createRepo(
+        name: String,
+        description: String,
+        `private`: Bool,
+
+        completion: @escaping (Result<Repository, Error>) -> Void
+    ) {
+
+        let parameters: Parameters = [
+            "name": name,
+            "description": description,
+            "private": `private`
+        ]
+
+        AF.request(
             "\(baseUrl)/user/repos",
             method: .post,
-            parameters: [
-                "name": name,
-                "description": description
-            ],
+            parameters: parameters,
             encoding: JSONEncoding.default,
             headers: headers
         )
         .validate(statusCode: 200..<300)
-        .serializingDecodable(Repository.self)
-        .response
+        .responseDecodable(of: Repository.self) { response in
 
-        if let data = response.data,
-           let json = String(data: data, encoding: .utf8) {
+            switch response.result {
 
-            print("***** Respuesta al crear el repositorio *****")
-            print(json)
-        }
+            case .success(let repository):
+                completion(.success(repository))
 
-        switch response.result {
+            case .failure(let error):
 
-        case .success(let repository):
-            return repository
+                if let data = response.data,
+                   let githubError = try? JSONDecoder().decode(
+                        GitHubError.self,
+                        from: data
+                   ) {
 
-        case .failure(let error):
-            print("Error al crear el repositorio:")
-            print(error.localizedDescription)
-            throw error
+                    let apiError = NSError(
+                        domain: "GitHubAPI",
+                        code: response.response?.statusCode ?? 0,
+                        userInfo: [
+                            NSLocalizedDescriptionKey: githubError.message
+                        ]
+                    )
+
+                    completion(.failure(apiError))
+
+                } else {
+                    completion(.failure(error))
+                }
+            }
         }
     }
 }
