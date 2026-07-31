@@ -29,9 +29,9 @@ struct ContentView: View {
             RepoForm(
                 selectedTab: $selection
             ) {
-                // Después de crear, vuelve a cargar la lista
                 Task {
-                    await repoListViewController.loadRepositories()
+                    await repoListViewController
+                        .loadRepositories()
                 }
             }
             .tabItem {

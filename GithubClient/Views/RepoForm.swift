@@ -40,11 +40,7 @@ struct RepoForm: View {
                 .lineLimit(4...6)
                 .padding(.vertical)
 
-                Toggle(
-                    "Repositorio privado",
-                    isOn: $viewController.isPrivate
-                )
-                .padding(.vertical)
+                
 
                 Spacer()
 
